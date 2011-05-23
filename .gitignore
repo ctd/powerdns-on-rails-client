@@ -1,0 +1,6 @@
+*-stamp
+*.pyc
+.coverage
+SCRATCH
+build/
+pdorclient.conf

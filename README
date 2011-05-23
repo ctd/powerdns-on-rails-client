@@ -1,0 +1,126 @@
+==========
+pdorclient
+==========
+
+A Python client library for PowerDNS on Rails.
+
+Use pdorclient to read and manipulate PowerDNS zone and record data from 
+your Python applications.  This client-side library was designed to work 
+with the RESTful API exposed by PowerDNS on Rails.
+
+
+Usage
+-----
+
+Reads::
+
+    >>> from pdorclient import Zone, Record
+    >>> zone = Zone.lookup('example.com')
+    >>> zone.name
+    'example.com'
+    >>> zone.type == Zone.TYPE_NATIVE
+    True
+    >>> zone.rtype
+    'NATIVE'
+    >>> zone.created_at
+    datetime.datetime(2011, 5, 20, 5, 5, 15)
+    >>> print "\n".join(map(lambda x: "Name: %s\tType: %4s\tContent: %s" 
+    ... % (x.name, x.rtype, x.content), zone.records))
+    Name: mail.example.com  Type:    A      Content: 10.0.0.4
+    Name: example.com       Type:   MX      Content: mail.example.com
+    Name: example.com       Type:    A      Content: 10.0.0.3
+    Name: ns2.example.com   Type:    A      Content: 10.0.0.2
+    Name: ns1.example.com   Type:    A      Content: 10.0.0.1
+    Name: example.com       Type:   NS      Content: ns2.example.com
+    Name: example.com       Type:   NS      Content: ns1.example.com
+    Name: example.com       Type:  SOA      Content: ns1.example.com admin@example.com 2011052307 10800 7200 604800 10800
+
+Zones with many thousands of DNS resource records may take some time to 
+load with the approach shown above.  ``lookup()`` takes an optional 
+argument to limit the scope of its search.  Supposing an organisation 
+had taken to the convention of naming their hosts after their physical 
+location, the following snippet would limit the scope of a search to DNS 
+resource records for hosts in a hypothetical Room 404::
+
+    from pdorclient import lookup_zone
+    zone = Zone.lookup('example.net', 'r404-')
+
+Writes::
+
+    >>> from pdorclient import Zone, Record
+    >>> zone = Zone(name='example.net', type=Zone.TYPE_MASTER, 
+    ... ttl=3600)
+    >>> zone.records.append(Record(name='example.net', 
+    ... type=Record.TYPE_SOA,
+    ... content='ns1.example.net admin@example.net 1 1 1 1 1',
+    ... ttl=7200))
+    >>> zone.save()
+
+Read ``tests/`` for all you can eat.
+
+
+Configuration
+-------------
+
+Authentication credentials are stored on disk.  On UNIX platforms, this 
+file should live at ``/etc/pdorclient.conf`` and look like this::
+
+    [client]
+    url=https://moocows.and.unicorns/
+    username=robot
+    password=yourpasswordhere
+
+Where ``url`` points at your PowerDNS on Rails installation, and 
+``username`` and ``password`` are PowerDNS on Rails administrative 
+credentials.
+
+The library will also look for ``pdorclient.conf`` in your current 
+working directory to simplify testing.  If neither of those options are 
+palatable, supply your own path to your configuration using the 
+``config`` argument wherever you see it.
+
+Your configuration *must not* be globally readable!
+
+
+Terminology
+-----------
+
+What PowerDNS and PowerDNS on Rails call a *domain* we call a zone_.
+
+.. _zone: http://en.wikipedia.org/wiki/DNS_zone
+
+
+Development
+-----------
+
+Install an instance of PowerDNS on Rails, and from your PDOR working 
+directory::
+
+    rake db:migrate
+
+    rake db:seed
+
+You do not need a working PowerDNS nameserver for unit testing.  It is, 
+however, a good idea to include at least one functional nameserver in 
+your wider integration testing.
+
+Create a ``pdorclient.conf`` file alongside this ``README`` to match 
+your new PDOR installation::
+
+    [client]
+    url=http://127.0.0.1:3000/
+    username=robot
+    password=yourpasswordhere
+
+Install coverage_.  Run all tests and output a coverage report with::
+
+    make coverage
+
+.. _coverage: http://nedbatchelder.com/code/coverage/
+
+
+Author
+------
+
+Saj Goonatilleke <sg@redu.cx>
+

@@ -129,6 +129,7 @@ class Resource(object):
               *args, **kwargs)
 
     def __getattr__(self, name):
+
         # External indentifier representation should probably be ints.
         if name == 'id':
             if self._id is not None:
@@ -241,7 +242,8 @@ class Resource(object):
             self._repr[name] = value
 
             if self._enforcing:
-                self._dirty_repr.append(name)
+                if name not in self._dirty_repr:
+                    self._dirty_repr.append(name)
                 object.__setattr__(self, '_state', self.STATE_DIRTY)
 
     def _create(self):

@@ -2,11 +2,11 @@
 pdorclient
 ==========
 
-A Python client library for PowerDNS on Rails.
-
 Use pdorclient to read and manipulate PowerDNS zone and record data from 
 your Python applications.  This client-side library was designed to work 
-with the RESTful API exposed by PowerDNS on Rails.
+with the RESTful API exposed by `PowerDNS on Rails`_.
+
+.. _PowerDNS on Rails: https://github.com/kennethkalmer/powerdns-on-rails
 
 
 Usage
@@ -62,8 +62,9 @@ Read ``tests/`` for all you can eat.
 Configuration
 -------------
 
-Authentication credentials are stored on disk.  On UNIX platforms, this 
-file should live at ``/etc/pdorclient.conf`` and look like this::
+Authentication credentials must currently be stored on disk.  On UNIX
+platforms, this file should live at ``/etc/pdorclient.conf`` and look like
+this::
 
     [client]
     url=https://moocows.and.unicorns/
@@ -97,6 +98,8 @@ Install an instance of PowerDNS on Rails, and from your PDOR working
 directory::
 
     rake db:migrate
+
+then::
 
     rake db:seed
 

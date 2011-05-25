@@ -42,6 +42,9 @@ def rfc952ify(name):
     re_validity = re.compile(
       '^('
         '('
+          '\*\.'
+        ')?'
+        '('
           '[a-zA-Z0-9]|'
           '[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]'
         ')\.'

@@ -448,6 +448,12 @@ class Record(Resource):
     TYPE_SRV    = 20
     TYPE_TXT    = 21
 
+    def __cmp__(self, other):
+        type_cmp = cmp(self.type, other.type)
+        if type_cmp != 0:
+            return type_cmp
+        return cmp(self.name, other.name)
+
     def __init__(self, name, type, content, ttl, id=None,
       domain_id=None, prio=None, change_date=None, created_at=None,
       updated_at=None, config=None):

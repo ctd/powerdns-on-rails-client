@@ -53,6 +53,14 @@ def test_lookup_seeded():
 
 @with_setup(tests.blank_slate, None)
 @with_setup(tests.disappear_config, tests.restore_config)
+def test_record_sorting():
+    zone = pdorclient.Zone.lookup('example.com',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    records = sorted(zone.records)
+    assert records[0].rtype == 'A'
+
+@with_setup(tests.blank_slate, None)
+@with_setup(tests.disappear_config, tests.restore_config)
 def test_add_zone():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_MASTER,

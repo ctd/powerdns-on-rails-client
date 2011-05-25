@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_rfc952_violation_on_nonsense_name():
     zone = pdorclient.Zone.lookup('example!com',
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_lookup_seeded():
     zone = pdorclient.Zone.lookup('example.com',
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     assert isinstance(zone, pdorclient.Zone)
     assert isinstance(zone._id, str) # Internal representation
@@ -59,7 +59,7 @@ def test_add_zone():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_persistence():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     assert isinstance(zone, pdorclient.Zone)
     assert zone._state == zone.STATE_AT_REST
@@ -77,7 +77,7 @@ def test_update():
     TEST_DATA_NOTES = 'Herpy derps'
 
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     before = zone.updated_at
     assert zone._state == zone.STATE_AT_REST
@@ -103,28 +103,28 @@ def test_update():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_attribute_error_on_derp():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.derp
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_id():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.id = 3
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_last_check():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.last_check = 1000
 
 @with_setup(None, tests.nuke_zone)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_remove_zone():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.delete()
 
     assert isinstance(zone, pdorclient.Zone)
@@ -135,7 +135,7 @@ def test_remove_zone():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_not_found_on_missing_zone():
     pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
 @with_setup(tests.blank_slate, tests.nuke_zone)
 def test_add_zone_with_no_master():

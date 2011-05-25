@@ -22,7 +22,7 @@ def test_raise_premature_on_early_persist():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_lookup_seeded():
     zone = pdorclient.Zone.lookup('example.com',
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     a_count = 0
     mx_count = 0
@@ -111,7 +111,7 @@ def test_add_zone():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_persistence():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     assert len(zone.records) == 5
 
@@ -132,7 +132,7 @@ def test_update():
     TEST_DATA_CONTENT = '5.5.5.5'
 
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
     # Locate the RR we want to update.  Normally, you would want to 
     # search by name and type, but I'm not particularly fussed here.  
@@ -174,21 +174,24 @@ def test_update():
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_id():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.records[0].id = 3
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_last_check():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.records[0].domain_id = 1000
 
-@with_setup(None, tests.nuke_zone)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_remove_record():
+    """Query for all zone resource records and remove only a single RR
+    from the set of results.  All other resource records must remain.
+
+    """
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     before = len(zone.records)
     logging.debug('zone before delete(): %r' % zone)
 
@@ -198,8 +201,34 @@ def test_remove_record():
     assert record.id == None
 
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      pdorclient.Config(path=tests.TMP_CONFIG))
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     after = len(zone.records)
     logging.debug('zone after delete(): %r' % zone)
 
     assert before - 1 == after
+
+@with_setup(None, tests.nuke_zone)
+@with_setup(tests.disappear_config, tests.restore_config)
+def test_selective_query_and_remove():
+    """Query for, and remove, only the two ``ns*`` DNS A resource
+    records.  All other resource records should remain.
+
+    """
+    N_NS_A_RECORDS = 2
+
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    before = len(zone.records)
+
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      match='ns',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    assert len(zone.records) == N_NS_A_RECORDS
+    for r in zone.records:
+        r.delete()
+    zone.save()
+
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    after = len(zone.records)
+    assert before - N_NS_A_RECORDS == after

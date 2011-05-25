@@ -3,14 +3,14 @@ import datetime
 import logging
 import os
 import pdorclient.errors
-import pdorclient.util
+import pdorclient.utils
 import restclient
 import simplejson
 import stat
 import urllib
 
 # Our version.
-__version__ = '0.1.0preview'
+__version__ = '0.2.0preview'
 
 # TODO: Git SHA-1 of the PDOR release this release was tested against.
 __pdor_compat__ = 'blah blah i am a sha sha'
@@ -288,7 +288,7 @@ class Resource(object):
         return qp
 
     def _refresh(self, xml):
-        xmlobj = pdorclient.util.xmlobjify(xml)
+        xmlobj = pdorclient.utils.xmlobjify(xml)
 
         attrs = {}
         for attr in self.ATTRS.keys():
@@ -363,7 +363,7 @@ class Resource(object):
 
     @classmethod
     def from_xml(klass, xml, config=None):
-        xmlobj = pdorclient.util.xmlobjify(xml)
+        xmlobj = pdorclient.utils.xmlobjify(xml)
 
         attrs = {}
         for attr in klass.ATTRS.keys():
@@ -489,7 +489,7 @@ class Record(Resource):
         self.change_date = change_date
         self.content = content
         self.created_at = created_at
-        self.name = pdorclient.util.rfc952ify(name)
+        self.name = pdorclient.utils.rfc952ify(name)
         self.prio = prio
         self.ttl = ttl
         self.type = type
@@ -568,7 +568,7 @@ class Zone(Resource):
                 master = None
             else:
                 for ipv4 in master:
-                    if not pdorclient.util.is_ipv4(ipv4):
+                    if not pdorclient.utils.is_ipv4(ipv4):
                         raise pdorclient.errors.IpV4ParseError(ipv4)
         if last_check is not None: # pragma: no cover
             assert isinstance(last_check, int)
@@ -597,7 +597,7 @@ class Zone(Resource):
         self.created_at = created_at
         self.last_check = last_check
         self.master = master
-        self.name = pdorclient.util.rfc952ify(name)
+        self.name = pdorclient.utils.rfc952ify(name)
         self.notes = notes
         self.notified_serial = notified_serial
         self.ttl = ttl
@@ -635,15 +635,28 @@ class Zone(Resource):
         pass
 
     @staticmethod
-    def lookup(name, config=None):
+    def lookup(name, match=None, config=None):
         """Lookup and return a ``Zone`` object for ``name``.
+
+        By default, this method will query for *all* DNS resource
+        records (RRs) for a zone and create one ``Record`` instance for
+        each RR.  This behaviour can keep Rails busy for a long time if
+        the zone contains many thousands of RRs [1]_.  If you are not
+        interested in iterating over every single RR in a zone, supply
+        a substring to ``match`` to limit the number of RRs returned::
+
+            Zone.lookup('example.com' match='ns')
 
         ``config``, if supplied, should be an instance of ``Config``.
 
         Will raise ``NameNotFoundError`` if an exact match on ``name``
         does not exist.
 
-        Will raise ``Rfc952ViolationError`` if ``name`` is nonsense.
+        Will raise ``Rfc952ViolationError`` if ``name`` or ``match`` is
+        nonsense.
+
+        .. [1] The delay is an artefact of the server-side
+        implementation and cannot be fixed here.
 
         """
         if not isinstance(config, Config):
@@ -657,9 +670,16 @@ class Zone(Resource):
         rc = restclient.RestClient()
         rc.transport.add_credentials(*config.credentials)
 
-        response = rc.get('%s/domains/%d' % (config.url, id),
-          headers={'Accept': 'application/xml'})
-        xmlobj = pdorclient.util.xmlobjify(response)
+        if match is not None:
+            match_normalised = pdorclient.utils.rfc952ify(match)
+
+            response = rc.get('%s/domains/%d?record=%s' %
+              (config.url, id, match_normalised),
+              headers={'Accept': 'application/xml'})
+        else:
+            response = rc.get('%s/domains/%d' % (config.url, id),
+              headers={'Accept': 'application/xml'})
+        xmlobj = pdorclient.utils.xmlobjify(response)
 
         name = Zone.from_xml(xmlobj, config)
 
@@ -691,7 +711,7 @@ class Zone(Resource):
         # a JSON-encoded response.  The rest of the stuff uses XML.
         response = simplejson.loads(rc.get(
           '%s/search/results?q=%s' %
-          (config.url, pdorclient.util.rfc952ify(name)),
+          (config.url, pdorclient.utils.rfc952ify(name)),
           headers={'Accept': 'application/json'}))
 
         for z in response:

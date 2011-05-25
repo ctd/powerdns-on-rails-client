@@ -4,8 +4,10 @@ pdorclient
 
 Use pdorclient to read and manipulate PowerDNS zone and record data from 
 your Python applications.  This client-side library was designed to work 
-with the RESTful API exposed by `PowerDNS on Rails`_.
+with the RESTful API exposed by a `modified version`_ of `PowerDNS on 
+Rails`_.
 
+.. _modified version:  https://github.com/saj/powerdns-on-rails/tree/mine
 .. _PowerDNS on Rails: https://github.com/kennethkalmer/powerdns-on-rails
 
 

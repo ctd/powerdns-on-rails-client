@@ -10,10 +10,10 @@ import stat
 import urllib
 
 # Our version.
-__version__ = '0.2.0preview'
+__version__ = '0.2.1preview'
 
-# TODO: Git SHA-1 of the PDOR release this release was tested against.
-__pdor_compat__ = 'blah blah i am a sha sha'
+# Git SHA-1 of the PDOR release this release was tested against.
+__pdor_compat__ = 'b26990cc5e1cca7782eda512128fa7994395323b'
 
 logger = logging.getLogger(__name__)
 

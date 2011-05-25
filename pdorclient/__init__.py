@@ -346,7 +346,7 @@ class Resource(object):
             raise pdorclient.errors.PrematurePersistError()
 
         response = None
-        if self._state in (self.STATE_NEW, self.STATE_DELETED):
+        if self._state == self.STATE_NEW:
             response = self._create()
         elif self._state == self.STATE_DIRTY:
             response = self._save()

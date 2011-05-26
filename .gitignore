@@ -3,4 +3,6 @@
 .coverage
 SCRATCH
 build/
+dist/
 pdorclient.conf
+pdorclient.egg-info/

@@ -35,5 +35,5 @@ work with the RESTful API exposed by PowerDNS on Rails.
       'simplejson',
     ],
 
-    packages = find_packages(),
+    packages = find_packages(exclude=['tests']),
 )

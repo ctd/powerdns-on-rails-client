@@ -225,6 +225,9 @@ def test_add_zone_from_template():
     zone.save()
     logging.debug('zone after save(): %r' % zone)
 
+    # The ``zone`` resource should be usable straight away.
+    assert len(zone.records) == 8
+
     # Ensure all the RRs from the template were cloned and persisted.
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))

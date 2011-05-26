@@ -721,8 +721,20 @@ class Zone(Resource):
     def _refresh(self, xml):
         Resource._refresh(self, xml)
 
-        # Update children's domain-id and resource paths so that they, 
-        # too, may be persisted.
+        if xml is not None:
+            xmlobj = pdorclient.utils.xmlobjify(xml)
+
+            if hasattr(xmlobj, 'records') and \
+              xmlobj.records.countchildren() > 0:
+                # This zone has been created from a template.  
+                # Instantiate RRs from what the server is telling us we 
+                # should have.
+                for r in xmlobj.records.iterchildren():
+                    r = Record.from_xml(r, self._config)
+                    self.records.append(r)
+
+        # Update children's domain-id and resource paths so that 
+        # they, too, may be persisted.
         for r in self.records:
             r._enforcing = False
             r._path = '/domains/%s/records' % str(self.id)
@@ -801,6 +813,7 @@ class Zone(Resource):
         else:
             response = rc.get('%s/domains/%d' % (config.url, id),
               headers={'Accept': 'application/xml'})
+        logging.debug('Response from remote: %r' % response)
         xmlobj = pdorclient.utils.xmlobjify(response)
 
         name = Zone.from_xml(xmlobj, config)
@@ -836,6 +849,7 @@ class Zone(Resource):
           '%s/search/results?q=%s' %
           (config.url, pdorclient.utils.rfc952ify(name)),
           headers={'Accept': 'application/json'}))
+        logging.debug('Response from remote: %r' % response)
 
         for z in response:
             if z['domain']['name'] == name:

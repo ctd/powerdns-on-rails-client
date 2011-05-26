@@ -34,6 +34,19 @@ def test_lookup_seeded():
 
 @with_setup(tests.blank_slate, None)
 @with_setup(tests.disappear_config, tests.restore_config)
+def test_lookup_seeded_no_rrs():
+    zone = pdorclient.Zone.lookup('example.com',
+      match=False,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+
+    assert isinstance(zone, pdorclient.Zone)
+    assert isinstance(zone.id, int)  # External
+    assert zone.id == 1
+    assert isinstance(zone.name, str)
+    assert zone.name == 'example.com'
+
+@with_setup(tests.blank_slate, None)
+@with_setup(tests.disappear_config, tests.restore_config)
 def test_add_zone():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_MASTER,

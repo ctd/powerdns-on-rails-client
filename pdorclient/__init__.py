@@ -10,7 +10,7 @@ import stat
 import urllib
 
 # Our version.
-__version__ = '0.2.1preview'
+__version__ = '0.3.0preview'
 
 # Git SHA-1 of the PDOR release this release was tested against.
 __pdor_compat__ = 'b26990cc5e1cca7782eda512128fa7994395323b'
@@ -655,6 +655,9 @@ class Zone(Resource):
 
             Zone.lookup('example.com' match='ns')
 
+        Alternatively, supply ``match=False`` to ignore all RRs.  The
+        returned ``Zone`` instance will contain no ``Record`` instances.
+
         ``config``, if supplied, should be an instance of ``Config``.
 
         Will raise ``NameNotFoundError`` if an exact match on ``name``
@@ -678,9 +681,18 @@ class Zone(Resource):
         rc = restclient.RestClient()
         rc.transport.add_credentials(*config.credentials)
 
-        if match is not None:
-            match_normalised = pdorclient.utils.rfc952ify(match)
+        # We can either query for all RRs or a subset of RRs.  There is 
+        # presently no way to tell PDOR that we do not want any RRs.  
+        # For now, query for RRs that are unlikely to exist (to keep 
+        # server-side processing down) and discard the results.
+        match_normalised = 'faffenblorg'
 
+        if match is not None and not isinstance(match, bool):
+            match_normalised = pdorclient.utils.rfc952ify(str(match))
+        elif match is None or isinstance(match, bool) and match is True:
+            match_normalised = None # Fetch all RRs
+
+        if match_normalised is not None:
             response = rc.get('%s/domains/%d?record=%s' %
               (config.url, id, match_normalised),
               headers={'Accept': 'application/xml'})
@@ -691,9 +703,10 @@ class Zone(Resource):
 
         name = Zone.from_xml(xmlobj, config)
 
-        for r in xmlobj.records.iterchildren():
-            r = Record.from_xml(r, config)
-            name.records.append(r)
+        if not (isinstance(match, bool) and match is False):
+            for r in xmlobj.records.iterchildren():
+                r = Record.from_xml(r, config)
+                name.records.append(r)
 
         return name
 

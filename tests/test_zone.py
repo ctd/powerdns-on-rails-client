@@ -110,7 +110,7 @@ def test_update():
     delta = after - before
     logging.debug('delta=%r' % delta)
     assert delta > datetime.timedelta(seconds=1)
-    assert delta < datetime.timedelta(seconds=5)
+    assert delta < datetime.timedelta(seconds=6)
 
 @raises(AttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)

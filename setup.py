@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-import pdorclient
 
 setup(
     name = 'pdorclient',
-    version = pdorclient.__version__,
+    version = '0.4.1',
     author = 'Saj Goonatilleke',
     author_email = 'sg@redu.cx',
 

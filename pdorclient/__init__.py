@@ -7,10 +7,11 @@ import pdorclient.utils
 import restclient
 import simplejson
 import stat
+import time
 import urllib
 
 # Our version.
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 # Git SHA-1 of the PDOR release this release was tested against.
 __pdor_compat__ = 'b26990cc5e1cca7782eda512128fa7994395323b'
@@ -401,7 +402,8 @@ class Record(Resource):
       'change-date': ( 'int(#)', 'str(#)',          None, True),
       'content':     ( '#',      'urllib.quote(#)', None, True),
       'created-at':  (
-        'datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)',
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Record.ENCODED_DATE_FMT)',
         None,
         False
@@ -420,7 +422,8 @@ class Record(Resource):
         True
       ),
       'updated-at':  (
-        "datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)",
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Record.ENCODED_DATE_FMT)',
         None,
         False
@@ -512,7 +515,8 @@ class Record(Resource):
 class Template(Resource):
     ATTRS = {
       'created-at':  (
-        'datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)',
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Record.ENCODED_DATE_FMT)',
         None,
         False
@@ -521,7 +525,8 @@ class Template(Resource):
       'name':        ( '#',      'urllib.quote(#)', None, True),
       'ttl':         ( 'int(#)', 'str(#)',          None, True),
       'updated-at':  (
-        "datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)",
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Record.ENCODED_DATE_FMT)',
         None,
         False
@@ -601,7 +606,8 @@ class Zone(Resource):
     ATTRS = {
       'account':         ( '#',      '#',               None, False),
       'created-at':      (
-        'datetime.datetime.strptime(#, Zone.ENCODED_DATE_FMT)',
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Zone.ENCODED_DATE_FMT)',
         None,
         False
@@ -627,7 +633,8 @@ class Zone(Resource):
         True
        ),
       'updated-at':      (
-        "datetime.datetime.strptime(#, Zone.ENCODED_DATE_FMT)",
+        'datetime.datetime('
+          '*(time.strptime(#, Record.ENCODED_DATE_FMT)[0:6]))',
         '#.strftime(Zone.ENCODED_DATE_FMT)',
         None,
         False

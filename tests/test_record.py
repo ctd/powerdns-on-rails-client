@@ -200,6 +200,32 @@ def test_add_record():
 
     assert record._state == record.STATE_AT_REST
 
+@with_setup(tests.disappear_config, tests.restore_config)
+def test_add_wildcard_record():
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    record = pdorclient.Record(
+        name='*.hi.%s' % tests.TEST_DATA_ZONE,
+        type=pdorclient.Record.TYPE_A,
+        content='8.8.8.8',
+        ttl=600,
+        config=pdorclient.Config(path=tests.TMP_CONFIG))
+    zone.records.append(record)
+    logging.debug('zone before save(): %r' % zone)
+
+    zone.save()
+
+    logging.debug('zone after save(): %r' % zone)
+
+    # Reload the zone to ensure the wildcard wasn't stripped off.
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    for r in zone.records:
+        if r.name.startswith('*'):
+            break
+    else: # pragma: no cover
+        assert False, 'Wildcard was not properly persisted'
+
 @raises(pdorclient.errors.ReadOnlyAttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_id():

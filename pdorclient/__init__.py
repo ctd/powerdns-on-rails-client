@@ -753,6 +753,11 @@ class Zone(Resource):
         """Instantiate and return a new ``Zone`` instance from an
         existing template.
 
+        Will raise ``NameNotFoundError`` if an exact match on
+        ``template`` does not exist.
+
+        Will raise ``Rfc952ViolationError`` if ``name`` is nonsense.
+
         """
         # Zone persists are delayed.  The caller should not have to wait 
         # until persist time to be told the template they specifed does 

@@ -40,6 +40,12 @@ def test_raise_not_found_on_missing_template_add():
       template='Derp',
       type=pdorclient.Zone.TYPE_MASTER)
 
+@raises(pdorclient.errors.Rfc952ViolationError)
+def test_raise_rfc952_violation_on_nonsense_name():
+    pdorclient.Zone.from_template('example!com',
+      template='East Coast Data Center',
+      type=pdorclient.Zone.TYPE_MASTER)
+
 @raises(NotImplementedError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_add_empty_template():

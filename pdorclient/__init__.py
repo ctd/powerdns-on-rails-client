@@ -735,6 +735,12 @@ class Zone(Resource):
         existing template.
 
         """
+        # Zone persists are delayed.  The caller should not have to wait 
+        # until persist time to be told the template they specifed does 
+        # not exist.  Do a lookup now and raise an immediate exception 
+        # if ``template`` is invalid.
+        Template.lookup(template, config)
+
         return Zone(name=name, type=type, template=template,
           config=config)
 

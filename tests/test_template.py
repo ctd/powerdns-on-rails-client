@@ -30,8 +30,15 @@ def test_lookup_seeded():
     assert isinstance(template.ttl, int)
 
 @raises(pdorclient.errors.NameNotFoundError)
-def test_raise_not_found_on_missing_template():
+def test_raise_not_found_on_missing_template_lookup():
     pdorclient.Template.lookup('Derp')
+
+@raises(pdorclient.errors.NameNotFoundError)
+@with_setup(tests.blank_slate, tests.nuke_zone)
+def test_raise_not_found_on_missing_template_add():
+    pdorclient.Zone.from_template(name=tests.TEST_DATA_ZONE,
+      template='Derp',
+      type=pdorclient.Zone.TYPE_MASTER)
 
 @raises(NotImplementedError)
 @with_setup(tests.disappear_config, tests.restore_config)

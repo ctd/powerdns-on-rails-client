@@ -58,6 +58,13 @@ Writes::
     ... ttl=7200))
     >>> zone.save()
 
+To create a new zone from an existing template::
+
+    >>> from pdorclient import Template, Zone
+    >>> zone = Zone.from_template(name='example.net',
+    ... template='I am a template', type=Zone.TYPE_MASTER)
+    >>> zone.save()
+
 Read ``tests/`` for all you can eat.
 
 

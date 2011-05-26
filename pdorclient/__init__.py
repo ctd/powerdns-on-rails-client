@@ -10,7 +10,7 @@ import stat
 import urllib
 
 # Our version.
-__version__ = '0.4.0preview'
+__version__ = '0.4.1'
 
 # Git SHA-1 of the PDOR release this release was tested against.
 __pdor_compat__ = 'b26990cc5e1cca7782eda512128fa7994395323b'

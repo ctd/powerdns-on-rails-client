@@ -288,6 +288,9 @@ class Resource(object):
         return qp
 
     def _refresh(self, xml):
+        if xml is None:
+            return # _create/_save was a no-op
+
         xmlobj = pdorclient.utils.xmlobjify(xml)
 
         attrs = {}
@@ -352,8 +355,7 @@ class Resource(object):
             response = self._save()
         logging.debug('Response from remote: %r' % response)
 
-        if response != None: # _create/_save was a no-op
-            self._refresh(response)
+        self._refresh(response)
 
         for c in self._children:
             logging.debug('Persisting child: %r' % c)

@@ -178,6 +178,28 @@ def test_update():
     assert delta > datetime.timedelta(seconds=1)
     assert delta < datetime.timedelta(seconds=5)
 
+@with_setup(tests.disappear_config, tests.restore_config)
+def test_add_record():
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    record = pdorclient.Record(
+        name='moo.%s' % tests.TEST_DATA_ZONE,
+        type=pdorclient.Record.TYPE_A,
+        content='7.7.7.7',
+        ttl=600,
+        config=pdorclient.Config(path=tests.TMP_CONFIG))
+    zone.records.append(record)
+
+    logging.debug('zone before save(): %r' % zone)
+
+    assert record._state == record.STATE_NEW
+
+    zone.save()
+
+    logging.debug('zone after save(): %r' % zone)
+
+    assert record._state == record.STATE_AT_REST
+
 @raises(pdorclient.errors.ReadOnlyAttributeError)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_read_only_error_on_write_to_id():

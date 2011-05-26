@@ -281,9 +281,9 @@ class Resource(object):
 
             if self._qp_hash_base is not None:
                 qp.append('%s[%s]=%s' %
-                  (str(self._qp_hash_base), attr, raw_value))
+                  (str(self._qp_hash_base), attr_kw, raw_value))
             else: # pragma: no cover
-                qp.append('%s=%s' % (attr, raw_value))
+                qp.append('%s=%s' % (attr_kw, raw_value))
 
         return qp
 
@@ -383,7 +383,7 @@ class Resource(object):
                 interp = conv_in.replace('#', "'%s'" % raw_value)
                 typed_value = eval(interp)
             else:
-                typed_value = None
+                continue
 
             logging.debug('%s.from_xml() found %r=%r' %
               (klass.__name__, attr_kw, typed_value))
@@ -509,6 +509,92 @@ class Record(Resource):
 
         self._enforcing = True
 
+class Template(Resource):
+    ATTRS = {
+      'created-at':  (
+        'datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)',
+        '#.strftime(Record.ENCODED_DATE_FMT)',
+        None,
+        False
+      ),
+      'id':          ( '#',      'urllib.quote(#)', None, True),
+      'name':        ( '#',      'urllib.quote(#)', None, True),
+      'ttl':         ( 'int(#)', 'str(#)',          None, True),
+      'updated-at':  (
+        "datetime.datetime.strptime(#, Record.ENCODED_DATE_FMT)",
+        '#.strftime(Record.ENCODED_DATE_FMT)',
+        None,
+        False
+      ),
+    }
+
+    def __cmp__(self, other): # pragma: no cover
+        return cmp(self.name, other.name)
+
+    def __init__(self, name, ttl, id=None, created_at=None,
+      updated_at=None, config=None):
+
+        assert isinstance(ttl, int)
+        if created_at is not None:
+            assert isinstance(created_at, datetime.datetime)
+        if updated_at is not None:
+            assert isinstance(updated_at, datetime.datetime)
+
+        Resource.__init__(self, path='/zone_templates', id=id,
+          qp_hash_base='template', config=config)
+
+        self.created_at = created_at
+        self.name = str(name)
+        self.ttl = ttl
+        self.updated_at = updated_at
+
+        self._ro_attrs.append('created_at')
+        self._ro_attrs.append('updated_at')
+
+        self._enforcing = True
+
+    def _create(self): # pragma: no cover
+        # Scratching my own itch here -- I do not need to modify 
+        # templates autonomously.
+        raise NotImplementedError()
+
+    def _delete(self): # pragma: no cover
+        # Scratching my own itch here -- I do not need to modify 
+        # templates autonomously.
+        raise NotImplementedError()
+
+    def _save(self): # pragma: no cover
+        # Scratching my own itch here -- I do not need to modify 
+        # templates autonomously.
+        raise NotImplementedError()
+
+    @staticmethod
+    def lookup(name, config=None):
+        """Lookup and return a ``Template`` object for ``name``.
+
+        ``config``, if supplied, should be an instance of ``Config``.
+
+        Will raise ``NameNotFoundError`` if an exact match on ``name``
+        does not exist.
+
+        """
+        if not isinstance(config, Config):
+            config = Config()
+
+        rc = restclient.RestClient()
+        rc.transport.add_credentials(*config.credentials)
+
+        response = rc.get('%s/zone_templates' % config.url,
+          headers={'Accept': 'application/xml'})
+        xmlobj = pdorclient.utils.xmlobjify(response)
+
+        for t in xmlobj.iterchildren():
+            template = Template.from_xml(t, config)
+            if template.name == name:
+                return template
+
+        raise pdorclient.errors.NameNotFoundError(name)
+
 class Zone(Resource):
     # http://wiki.powerdns.com/trac/wiki/fields
 
@@ -546,6 +632,7 @@ class Zone(Resource):
         None,
         False
       ),
+      'zone-template-name': ( '#', 'urllib.quote(#)', None, True),
     }
 
     TYPE_NATIVE     = 0
@@ -560,7 +647,8 @@ class Zone(Resource):
 
     def __init__(self, name, type, master=None, last_check=None,
       id=None, notified_serial=None, account=None, created_at=None,
-      updated_at=None, notes=None, ttl=None, config=None):
+      updated_at=None, notes=None, ttl=None, template=None,
+      config=None):
 
         # The following attributes are core PowerDNS attributes.  The 
         # ``pdns`` nameserver daemon requires them to function.
@@ -597,6 +685,8 @@ class Zone(Resource):
             assert isinstance(notes, str)
         if ttl is not None:
             assert isinstance(ttl, int)
+        if template is not None:
+            assert isinstance(template, str)
 
         Resource.__init__(self, path='/domains', id=id,
           qp_hash_base='domain', config=config)
@@ -611,12 +701,14 @@ class Zone(Resource):
         self.ttl = ttl
         self.type = type
         self.updated_at = updated_at
+        self.zone_template_name = template
 
         self._ro_attrs.append('account')
         self._ro_attrs.append('created_at')
         self._ro_attrs.append('last_check')
         self._ro_attrs.append('notified_serial')
         self._ro_attrs.append('updated_at')
+        self._ro_attrs.append('zone_template_name')
 
         self._enforcing = True
 
@@ -637,14 +729,18 @@ class Zone(Resource):
             r.domain_id = str(self.id)
             r._enforcing = True
 
-    @classmethod
-    def from_template(template): # pragma: no cover
-        # TODO
-        pass
+    @staticmethod
+    def from_template(name, template, type, config=None):
+        """Instantiate and return a new ``Zone`` instance from an
+        existing template.
+
+        """
+        return Zone(name=name, type=type, template=template,
+          config=config)
 
     @staticmethod
     def lookup(name, match=None, config=None):
-        """Lookup and return a ``Zone`` object for ``name``.
+        """Lookup and return a ``Zone`` instance for ``name``.
 
         By default, this method will query for *all* DNS resource
         records (RRs) for a zone and create one ``Record`` instance for
@@ -716,8 +812,8 @@ class Zone(Resource):
 
         ``config``, if supplied, should be an instance of ``Config``.
 
-        Will raise ``NameNotFoundError`` if an exact match on ``name`` does
-        not exist.
+        Will raise ``NameNotFoundError`` if an exact match on ``name``
+        does not exist.
 
         Will raise ``Rfc952ViolationError`` if ``name`` is nonsense.
 

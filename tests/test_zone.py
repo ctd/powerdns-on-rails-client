@@ -45,6 +45,12 @@ def test_lookup_seeded_no_rrs():
     assert isinstance(zone.name, str)
     assert zone.name == 'example.com'
 
+@raises(pdorclient.errors.NameNotFoundError)
+@with_setup(tests.disappear_config, tests.restore_config)
+def test_raise_not_found_on_missing_zone():
+    pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+
 @with_setup(tests.blank_slate, None)
 @with_setup(tests.disappear_config, tests.restore_config)
 def test_add_zone():
@@ -144,12 +150,6 @@ def test_remove_zone():
     assert zone._state == zone.STATE_DELETED
     assert zone.id == None
 
-@raises(pdorclient.errors.NameNotFoundError)
-@with_setup(tests.disappear_config, tests.restore_config)
-def test_raise_not_found_on_missing_zone():
-    pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
-      config=pdorclient.Config(path=tests.TMP_CONFIG))
-
 @with_setup(tests.blank_slate, tests.nuke_zone)
 def test_add_zone_with_no_master():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
@@ -211,6 +211,25 @@ def test_add_zone_with_multiple_masters():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
     assert isinstance(zone.master, list)
     assert zone.master == ['1.2.3.4', '9.8.7.6']
+
+@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.disappear_config, tests.restore_config)
+def test_add_zone_from_template():
+    zone = pdorclient.Zone.from_template(
+      name=tests.TEST_DATA_ZONE,
+      template='East Coast Data Center',
+      type=pdorclient.Zone.TYPE_MASTER,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+
+    logging.debug('zone before save(): %r' % zone)
+    zone.save()
+    logging.debug('zone after save(): %r' % zone)
+
+    # Ensure all the RRs from the template were cloned and persisted.
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    logging.debug('Reloaded zone: %r' % zone)
+    assert len(zone.records) == 8
 
 @raises(pdorclient.errors.IpV4ParseError)
 def test_add_zone_with_invalid_master():

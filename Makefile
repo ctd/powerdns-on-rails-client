@@ -25,6 +25,7 @@ tests: test-stamp
 
 test-stamp: $(SOURCES)
 	$(AT)coverage run $(NOSE) tests/test_config.py
+	$(AT)coverage run -a $(NOSE) tests/test_template.py
 	$(AT)coverage run -a $(NOSE) tests/test_zone.py
 	$(AT)coverage run -a $(NOSE) tests/test_record.py
 	$(AT)touch $@

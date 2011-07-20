@@ -260,7 +260,14 @@ def test_remove_record():
     before = len(zone.records)
     logging.debug('zone before delete(): %r' % zone)
 
-    record = zone.records[0]
+    # Don't touch A records.  The next test assumes it will find some.
+    for record in zone.records:
+        if record.type != pdorclient.Record.TYPE_A:
+            break
+    else: # pragma: no cover
+        assert False, 'Your test data only contains A records.  ' \
+          'Add something else (CNAME, TXT, whatever).'
+
     record.delete()
     assert record._state == pdorclient.Record.STATE_DELETED
     assert record.id == None

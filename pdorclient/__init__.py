@@ -11,7 +11,7 @@ import time
 import urllib
 
 # Our version.
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 # Git SHA-1 of the PDOR release this release was tested against.
 __pdor_compat__ = 'b26990cc5e1cca7782eda512128fa7994395323b'
@@ -459,7 +459,7 @@ class Record(Resource):
             return type_cmp
         return cmp(self.name, other.name)
 
-    def __init__(self, name, type, content, ttl, id=None,
+    def __init__(self, name, type, content, ttl=None, id=None,
       domain_id=None, prio=None, change_date=None, created_at=None,
       updated_at=None, config=None):
 
@@ -469,7 +469,13 @@ class Record(Resource):
         assert type in map(lambda y: getattr(Record, y),
           filter(lambda x: x.startswith('TYPE_'), dir(Record)))
         assert isinstance(content, str)
-        assert isinstance(ttl, int)
+
+        # Record TTLs are normally mandatory.  PowerDNS on Rails adds a 
+        # TTL field at the zone layer that it will apply to records if 
+        # no TTL is supplied with a new record.
+        if ttl is not None:
+            assert isinstance(ttl, int)
+
         if domain_id is not None:
             assert isinstance(domain_id, int) or \
               isinstance(domain_id, str)

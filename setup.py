@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pdorclient',
-    version = '0.4.2',
+    version = '0.4.3',
     author = 'Saj Goonatilleke',
     author_email = 'sg@redu.cx',
 
@@ -18,7 +18,7 @@ work with the RESTful API exposed by PowerDNS on Rails.
     platforms = [ 'Linux', 'Unix' ],
 
     classifiers = [
-      'Development Status :: 3 - Alpha',
+      'Development Status :: 4 - Beta',
       'Intended Audience :: System Administrators',
       'License :: OSI Approved :: BSD License',
       'Operating System :: POSIX',

@@ -16,6 +16,7 @@ TEST_DATA_SOA = ' '.join([
   '1209600',                     # expire
   '10800',                       # minimum
 ])
+TEST_DATA_TTL = 600
 TEST_DATA_ZONE = 'pdorclient.test'
 
 CONFIG = pdorclient.Config.CONFIG

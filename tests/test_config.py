@@ -7,17 +7,15 @@ import tests
 
 logger = logging.getLogger(__name__)
 
-def test_config():
-    """Has the tester defined our configuration for us?"""
+def test_has_tester_defined_config():
     config = pdorclient.Config()
 
 @raises(pdorclient.errors.MissingConfigurationError)
 @with_setup(tests.disappear_config, tests.restore_config)
-def test_no_config():
-    """What happens when we are missing our configuration?"""
+def test_what_happens_on_missing_config():
     config = pdorclient.Config()
 
-def test_custom_config_path():
+def test_fall_back_on_default_config_path():
     # Fall back on ``tests.CONFIG`` in ``$PWD``.
     config = pdorclient.Config(path='yep')
 
@@ -26,16 +24,14 @@ def test_raises_attribute_error_on_derp():
     config = pdorclient.Config()
     config.derp
 
-def test_url_exists():
-    """Has the tester defined what looks like a valid URL?"""
+def test_for_something_that_looks_like_a_url():
     config = pdorclient.Config()
     url = config.url
     assert isinstance(url, str)
     assert url.startswith('http')
     assert not url.endswith('/')
 
-def test_credentials_exist():
-    """Has the tester defined credentials?"""
+def test_for_something_that_looks_like_a_set_of_credentials():
     config = pdorclient.Config()
     (username, password) = config.credentials
     assert isinstance(username, str)
@@ -43,8 +39,7 @@ def test_credentials_exist():
     assert len(username) > 0
     assert len(password) > 0
 
-def test_auth():
-    """Open sesame..!  Did the door open?"""
+def test_auth_credentials_are_actually_valid():
     config = pdorclient.Config()
     url = config.url
     (username, password) = config.credentials

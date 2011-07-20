@@ -5,15 +5,20 @@ import pdorclient
 import pdorclient.errors
 import tests
 
-# I only bothered to implement basic template lookups so I could 
-# instantiate new zones using existing templates.  Template lookups 
-# should work, but any attempt to modify and persist a template should 
-# fail in an obvious way.  Remove this comment when write support is 
-# added.
+# Template instantiation is not tested here.  See test_zone.py.
 
 logger = logging.getLogger(__name__)
 
-@with_setup(tests.disappear_config, tests.restore_config)
+def setup():
+    tests.disappear_config()
+
+def teardown():
+    tests.restore_config()
+
+@raises(pdorclient.errors.MissingConfigurationError)
+def test_lookup_with_null_config():
+    zone = pdorclient.Template.lookup('example.com')
+
 def test_lookup_seeded():
     template = pdorclient.Template.lookup('East Coast Data Center',
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -31,24 +36,27 @@ def test_lookup_seeded():
 
 @raises(pdorclient.errors.NameNotFoundError)
 def test_raise_not_found_on_missing_template_lookup():
-    pdorclient.Template.lookup('Derp')
+    pdorclient.Template.lookup('Derp',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
 @raises(pdorclient.errors.NameNotFoundError)
-@with_setup(tests.blank_slate, tests.nuke_zone)
 def test_raise_not_found_on_missing_template_add():
     pdorclient.Zone.from_template(name=tests.TEST_DATA_ZONE,
       template='Derp',
-      type=pdorclient.Zone.TYPE_MASTER)
+      type=pdorclient.Zone.TYPE_MASTER,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
 @raises(pdorclient.errors.Rfc952ViolationError)
 def test_raise_rfc952_violation_on_nonsense_name():
     pdorclient.Zone.from_template('example!com',
       template='East Coast Data Center',
-      type=pdorclient.Zone.TYPE_MASTER)
+      type=pdorclient.Zone.TYPE_MASTER,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
 
 @raises(NotImplementedError)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_add_empty_template():
+    # This operation is currently not supported.
+
     template = pdorclient.Template('New template', ttl=3600,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
 

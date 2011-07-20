@@ -38,19 +38,13 @@ def disappear_config():
 def restore_config():
     os.rename(TMP_CONFIG, CONFIG)
 
-def blank_slate():
-    try:
-        pdorclient.Zone.lookup_id(TEST_DATA_ZONE)
-    except pdorclient.errors.NameNotFoundError:
-        pass
-    else: # pragma: no cover
-        assert False, \
-          '%s should not already exist.  Perhaps it was left over ' \
-          'from an old test run?' % TEST_DATA_ZONE
-
 def nuke_zone():
-    try:
-        zone = pdorclient.Zone.lookup(TEST_DATA_ZONE)
+    try: # pragma: no cover
+        try:
+            zone = pdorclient.Zone.lookup(TEST_DATA_ZONE)
+        except pdorclient.errors.MissingConfigurationError:
+            zone = pdorclient.Zone.lookup(TEST_DATA_ZONE,
+              config=pdorclient.Config(path=TMP_CONFIG))
         zone.delete()
     except pdorclient.errors.NameNotFoundError:
         pass

@@ -25,6 +25,13 @@ def test_refuse_to_persist_a_dangling_record():
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     record.save()
 
+@raises(pdorclient.errors.MissingConfigurationError)
+def test_dangling_record_with_null_config():
+    pdorclient.Record(name=tests.TEST_DATA_ZONE,
+      type=pdorclient.Record.TYPE_NS,
+      content='ns1.%s' % tests.TEST_DATA_ZONE,
+      ttl=600)
+
 def test_lookup_seeded():
     zone = pdorclient.Zone.lookup('example.com',
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -58,7 +65,7 @@ def test_lookup_seeded():
     assert soa_count == 1
     assert len(zone.records) == total_count
 
-def test_lookup_seeded_no_rrs():
+def test_lookup_seeded_without_rrs():
     zone = pdorclient.Zone.lookup('example.com',
       match=False,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -262,18 +269,18 @@ def test_can_add_record_with_its_own_ttl():
             assert record.ttl == tests.TEST_DATA_TTL
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
-def test_raise_read_only_error_on_write_to_id():
+def test_stop_me_from_writing_to_id():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.records[0].id = 3
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
-def test_raise_read_only_error_on_write_to_domain_id():
+def test_stop_me_from_writing_to_domain_id():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.records[0].domain_id = 1000
 
-def test_remove_record():
+def test_remove_a_single_record():
     """Query for all zone resource records and remove only a single RR
     from the set of results.  All other resource records must remain.
 
@@ -302,7 +309,7 @@ def test_remove_record():
 
     assert before - 1 == after
 
-def test_selective_query_and_remove():
+def test_remove_multiple_records_with_a_mask():
     """Query for, and remove, only the two ``ns*`` DNS A resource
     records.  All other resource records should remain.
 

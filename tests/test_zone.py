@@ -8,13 +8,27 @@ import time
 
 logger = logging.getLogger(__name__)
 
+def setup():
+    tests.nuke_zone()
+    tests.disappear_config()
+
+def teardown():
+    tests.restore_config()
+    tests.nuke_zone()
+
 @raises(pdorclient.errors.Rfc952ViolationError)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_rfc952_violation_on_nonsense_name():
-    zone = pdorclient.Zone.lookup('example!com',
+    pdorclient.Zone.lookup('example!com',
       config=pdorclient.Config(path=tests.TMP_CONFIG))
 
-@with_setup(tests.disappear_config, tests.restore_config)
+@raises(pdorclient.errors.MissingConfigurationError)
+def test_lookup_with_null_config():
+    pdorclient.Zone.lookup('example.com')
+
+@raises(pdorclient.errors.MissingConfigurationError)
+def test_lookup_id_with_null_config():
+    pdorclient.Zone.lookup_id('example.com')
+
 def test_lookup_seeded():
     zone = pdorclient.Zone.lookup('example.com',
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -32,9 +46,7 @@ def test_lookup_seeded():
     assert zone.updated_at >= zone.created_at
     assert isinstance(zone.ttl, int)
 
-@with_setup(tests.blank_slate, None)
-@with_setup(tests.disappear_config, tests.restore_config)
-def test_lookup_seeded_no_rrs():
+def test_lookup_seeded_without_rrs():
     zone = pdorclient.Zone.lookup('example.com',
       match=False,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -46,17 +58,14 @@ def test_lookup_seeded_no_rrs():
     assert zone.name == 'example.com'
 
 @raises(pdorclient.errors.NameNotFoundError)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_not_found_on_missing_zone():
     pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
 
-@with_setup(tests.blank_slate, None)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_add_zone():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_MASTER,
-      ttl=600,
+      ttl=tests.TEST_DATA_TTL,
       notes=tests.TEST_DATA_NOTES,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
 
@@ -75,7 +84,6 @@ def test_add_zone():
     assert isinstance(zone.updated_at, datetime.datetime)
     assert zone.updated_at >= zone.created_at
 
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_persistence():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -91,7 +99,6 @@ def test_persistence():
     assert isinstance(zone.notes, str)
     assert zone.notes == tests.TEST_DATA_NOTES
 
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_update():
     TEST_DATA_NOTES = 'Herpy derps'
 
@@ -119,28 +126,24 @@ def test_update():
     assert delta < datetime.timedelta(seconds=6)
 
 @raises(AttributeError)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_raise_attribute_error_on_derp():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.derp
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
-@with_setup(tests.disappear_config, tests.restore_config)
-def test_raise_read_only_error_on_write_to_id():
+def test_stop_me_from_writing_to_id():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.id = 3
 
 @raises(pdorclient.errors.ReadOnlyAttributeError)
-@with_setup(tests.disappear_config, tests.restore_config)
-def test_raise_read_only_error_on_write_to_last_check():
+def test_stop_me_from_writing_to_last_check():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.last_check = 1000
 
 @with_setup(None, tests.nuke_zone)
-@with_setup(tests.disappear_config, tests.restore_config)
 def test_remove_zone():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))
@@ -150,70 +153,81 @@ def test_remove_zone():
     assert zone._state == zone.STATE_DELETED
     assert zone.id == None
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_with_no_master():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
-      type=pdorclient.Zone.TYPE_MASTER)
-    zone.save()
-
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
-    assert zone.master is None
-
-@with_setup(tests.blank_slate, tests.nuke_zone)
-def test_add_zone_with_null_master():
-    zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_MASTER,
-      master=[])
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.save()
 
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     assert zone.master is None
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_with_empty_master():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_MASTER,
-      master='')
+      master=[],
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.save()
 
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     assert zone.master is None
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
+def test_add_zone_with_blank_master():
+    zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
+      type=pdorclient.Zone.TYPE_MASTER,
+      master='',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    zone.save()
+
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
+    assert zone.master is None
+
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_with_single_master():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_SLAVE,
-      master='1.2.3.4')
+      master='1.2.3.4',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.save()
 
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     assert isinstance(zone.master, list)
     assert zone.master == ['1.2.3.4',]
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_with_single_master_with_trailing_comma():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_SLAVE,
-      master='1.2.3.4,')
+      master='1.2.3.4,',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.save()
 
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     assert isinstance(zone.master, list)
     assert zone.master == ['1.2.3.4',]
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_with_multiple_masters():
     zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_SLAVE,
-      master='1.2.3.4,9.8.7.6')
+      master='1.2.3.4,9.8.7.6',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     zone.save()
 
-    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE)
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      config=pdorclient.Config(path=tests.TMP_CONFIG))
     assert isinstance(zone.master, list)
     assert zone.master == ['1.2.3.4', '9.8.7.6']
 
-@with_setup(tests.blank_slate, tests.nuke_zone)
-@with_setup(tests.disappear_config, tests.restore_config)
+@with_setup(tests.nuke_zone, tests.nuke_zone)
 def test_add_zone_from_template():
     zone = pdorclient.Zone.from_template(
       name=tests.TEST_DATA_ZONE,
@@ -236,6 +250,7 @@ def test_add_zone_from_template():
 
 @raises(pdorclient.errors.IpV4ParseError)
 def test_add_zone_with_invalid_master():
-    zone = pdorclient.Zone(name=tests.TEST_DATA_ZONE,
+    pdorclient.Zone(name=tests.TEST_DATA_ZONE,
       type=pdorclient.Zone.TYPE_SLAVE,
-      master='1.2.3.4.9.8.7.6')
+      master='1.2.3.4.9.8.7.6',
+      config=pdorclient.Config(path=tests.TMP_CONFIG))

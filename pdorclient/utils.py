@@ -41,17 +41,17 @@ def rfc952ify(name):
     # See RFC-952 and RFC-1123.
     re_validity = re.compile(
       '^('
+        '\*\.'
+      ')?'
+      '('
         '('
-          '\*\.'
-        ')?'
-        '('
-          '[a-zA-Z0-9]|'
-          '[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]'
+          '[a-z0-9]|'
+          '[a-z0-9][a-z0-9\-]*[a-z0-9]'
         ')\.'
       ')*('
-        '[A-Za-z]|'
-        '[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9]'
-      ')$')
+        '[a-z0-9]|'
+        '[a-z0-9][a-z0-9\-]*[a-z0-9]'
+      ')$', re.I)
     m = re_validity.match(normalised)
     if not m:
         raise pdorclient.errors.Rfc952ViolationError(normalised)

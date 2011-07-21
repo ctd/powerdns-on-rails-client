@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pdorclient',
-    version = '0.4.3',
+    version = '0.4.4',
     author = 'Saj Goonatilleke',
     author_email = 'sg@redu.cx',
 

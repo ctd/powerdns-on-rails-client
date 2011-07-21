@@ -198,13 +198,9 @@ def test_add_record():
     zone.records.append(record)
 
     logging.debug('zone before save(): %r' % zone)
-
     assert record._state == record.STATE_NEW
-
     zone.save()
-
     logging.debug('zone after save(): %r' % zone)
-
     assert record._state == record.STATE_AT_REST
 
 def test_add_wildcard_record():
@@ -230,6 +226,22 @@ def test_add_wildcard_record():
             break
     else: # pragma: no cover
         assert False, 'Wildcard was not properly persisted'
+
+def test_add_ptr_record():
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      match='2', config=pdorclient.Config(path=tests.TMP_CONFIG))
+    record = pdorclient.Record(
+        name='2.%s' % tests.TEST_DATA_ZONE,
+        type=pdorclient.Record.TYPE_PTR,
+        content='foo.bar.test',
+        config=pdorclient.Config(path=tests.TMP_CONFIG))
+    zone.records.append(record)
+
+    logging.debug('zone before save(): %r' % zone)
+    assert record._state == record.STATE_NEW
+    zone.save()
+    logging.debug('zone after save(): %r' % zone)
+    assert record._state == record.STATE_AT_REST
 
 def test_record_ttls_match_zone_ttl():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,

@@ -243,6 +243,24 @@ def test_add_ptr_record():
     logging.debug('zone after save(): %r' % zone)
     assert record._state == record.STATE_AT_REST
 
+def test_add_srv_record():
+    zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
+      match='2', config=pdorclient.Config(path=tests.TMP_CONFIG))
+    record = pdorclient.Record(
+        name='_test._tcp.%s' % tests.TEST_DATA_ZONE,
+		  prio=0,
+
+        type=pdorclient.Record.TYPE_SRV,
+        content='0 443 foo.bar.test',
+        config=pdorclient.Config(path=tests.TMP_CONFIG))
+    zone.records.append(record)
+
+    logging.debug('zone before save(): %r' % zone)
+    assert record._state == record.STATE_NEW
+    zone.save()
+    logging.debug('zone after save(): %r' % zone)
+    assert record._state == record.STATE_AT_REST
+
 def test_record_ttls_match_zone_ttl():
     zone = pdorclient.Zone.lookup(tests.TEST_DATA_ZONE,
       config=pdorclient.Config(path=tests.TMP_CONFIG))

@@ -38,12 +38,14 @@ def rfc952ify(name):
     # Silently normalise case and trailing periods.
     normalised = str(name).lower().rstrip('.')
 
-    # See RFC-952 and RFC-1123.
+    # See RFC-952 and RFC-1123. 
+    # Underscores (_) permitted in RFC-2782.
     re_validity = re.compile(
       '^('
         '\*\.'
       ')?'
       '('
+        '(_)?'
         '('
           '[a-z0-9]|'
           '[a-z0-9][a-z0-9\-]*[a-z0-9]'
